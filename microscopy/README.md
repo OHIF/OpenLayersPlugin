@@ -10,7 +10,7 @@ Paste the following into the console:
 ```
 
 microscopyPluginConfig = {
-  url: "http://127.0.0.1:8083/OpenLayersPlugin/microscopy/microscopy.js",
+  url: "https://rawgit.com/OHIF/OpenLayersPlugin/master/microscopy/microscopy.js",
   allowCaching: false,
   scriptURLs: [
     "https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.1.3/build/ol.js",
