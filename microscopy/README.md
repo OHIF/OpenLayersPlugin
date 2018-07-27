@@ -19,7 +19,11 @@ microscopyPluginConfig = {
 
 OHIFPlugin.reloadPlugin(microscopyPluginConfig);
 
-OHIFPlugin.entryPoints.MicroscopyPlugin()
 
 ```
 
+
+Then paste this:
+```
+OHIFPlugin.entryPoints.MicroscopyPlugin()
+```
