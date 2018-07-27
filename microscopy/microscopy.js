@@ -19,7 +19,8 @@ MicroscopyPlugin = class MicroscopyPlugin extends OHIFPlugin {
     setup() {
       console.log('setup Microscopy');
 
-      this.viewport = Session.get('activeViewport'));
+      this.viewport = Session.get('activeViewport');
+      this.renderViewport();
     }
 
     getDisplaySet(viewportIndex) {
@@ -33,44 +34,51 @@ MicroscopyPlugin = class MicroscopyPlugin extends OHIFPlugin {
     }
 
     renderViewport(viewportIndex = 0) {
-        try {
-            let self = this;
-            // reset the div that will hold this plugin
-            // - remove old ones
-            // - add a new one with our id
+      let self = this;
+      // reset the div that will hold this plugin
+      // - remove old ones
+      // - add a new one with our id
 
 
-            // Obtain the imaging data that has been provided to the viewport
-            const displaySet = this.getDisplaySet(viewportIndex);
+      // Obtain the imaging data that has been provided to the viewport
+      const displaySet = this.getDisplaySet(viewportIndex);
 
-            // Clear whatever is currently present in the viewport
-            const containers = document.querySelectorAll(".viewportContainer");
-            const parent = containers[viewportIndex];
-            parent.innerHTML = "";
+      // Clear whatever is currently present in the viewport
+      const containers = document.querySelectorAll(".viewportContainer");
+      const parent = containers[viewportIndex];
+      parent.innerHTML = "";
 
-            // Create our own viewport rendering window
-            this.pluginDiv = document.createElement("div");
-            this.pluginDiv.style.width = '100%';
-            this.pluginDiv.style.height = '100%';
-            this.pluginDiv.id = "microscopyPlugin";
-            parent.appendChild(this.pluginDiv);
+      // Create our own viewport rendering window
+      this.pluginDiv = document.createElement("div");
+      this.pluginDiv.style.width = '100%';
+      this.pluginDiv.style.height = '100%';
+      this.pluginDiv.id = "microscopyPlugin";
+      parent.appendChild(this.pluginDiv);
 
-            // Retrieve the Cornerstone imageIds from the display set
-            // TODO: In future, we want to get the metadata independently from Cornerstone
-            const imageIds = displaySet.images.map(image => image.getImageId());
+      // Retrieve the Cornerstone imageIds from the display set
+      // TODO: In future, we want to get the metadata independently from Cornerstone
+     // const imageIds = displaySet.images.map(image => image.getImageId());
 
-            installOpenLayersRenderer(container);
-        }
-        catch(error) {
-            console.log(error);
-        }
+      this.installOpenLayersRenderer(this.pluginDiv);
     }
 
 
     // install the microscopy renderer into the web page.
     // you should only do this once.
     installOpenLayersRenderer(container) {
-
+      console.log(container);
+      var map = new ol.Map({
+        target: container,
+        layers: [
+          new ol.layer.Tile({
+            source: new ol.source.OSM()
+          })
+        ],
+        view: new ol.View({
+          center: ol.proj.fromLonLat([37.41, 8.82]),
+          zoom: 4
+        })
+      });
     }
 
 
@@ -78,8 +86,8 @@ MicroscopyPlugin = class MicroscopyPlugin extends OHIFPlugin {
 
 
 OHIFPlugin.entryPoints["MicroscopyPlugin"] = function () {
-    let MicroscopyPlugin = new MicroscopyPlugin();
-    MicroscopyPlugin.setup();
+    let microscopyPlugin = new MicroscopyPlugin();
+    microscopyPlugin.setup();
 
-    OHIFPlugin.MicroscopyPlugin = MicroscopyPlugin;
+    OHIFPlugin.MicroscopyPlugin = microscopyPlugin;
 };
