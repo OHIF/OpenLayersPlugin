@@ -27,7 +27,7 @@ MicroscopyPlugin = class MicroscopyPlugin extends OHIFPlugin {
         const viewportData = OHIF.viewerbase.layoutManager.viewportData[viewportIndex];
         const { studyInstanceUid, displaySetInstanceUid } = viewportData;
         const studyMetadata = OHIF.viewer.StudyMetadataList.findBy({ studyInstanceUID: studyInstanceUid });
-        
+
         return studyMetadata.findDisplaySet(displaySet => {
             return displaySet.displaySetInstanceUid === displaySetInstanceUid;
         });
@@ -59,29 +59,57 @@ MicroscopyPlugin = class MicroscopyPlugin extends OHIFPlugin {
       // TODO: In future, we want to get the metadata independently from Cornerstone
      // const imageIds = displaySet.images.map(image => image.getImageId());
 
-      this.installOpenLayersRenderer(this.pluginDiv);
+      this.installOpenLayersRenderer(this.pluginDiv, displaySet);
     }
 
 
     // install the microscopy renderer into the web page.
     // you should only do this once.
-    installOpenLayersRenderer(container) {
+    installOpenLayersRenderer(container, displaySet) {
       console.log(container);
-      var map = new ol.Map({
-        target: container,
-        layers: [
-          new ol.layer.Tile({
-            source: new ol.source.OSM()
-          })
-        ],
-        view: new ol.View({
-          center: ol.proj.fromLonLat([37.41, 8.82]),
-          zoom: 4
-        })
+
+      const server = OHIF.servers.getCurrentServer();
+      const accessToken = OHIF.user.getAccessToken(); // TODO: need to refresh
+
+      const dicomWebClient = new DICOMwebClient.api.DICOMwebClient({
+        url: server.wadoRoot,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+        },
       });
+
+      const searchInstanceOptions = {
+        studyInstanceUID: displaySet.studyInstanceUid,
+        seriesInstanceUID: displaySet.seriesInstanceUid,
+      };
+      dicomWebClient.searchForInstances(searchInstanceOptions).then((instances) => {
+        const promises = []
+        for (let i = 0; i < instances.length; i++) {
+          const sopInstanceUID = instances[i]["00080018"]["Value"][0];
+          const retrieveInstanceOptions = {
+            studyInstanceUID: displaySet.studyInstanceUid,
+            seriesInstanceUID: displaySet.seriesInstanceUid,
+            sopInstanceUID,
+          };
+          const promise = dicomWebClient.retrieveInstanceMetadata(retrieveInstanceOptions).then(metadata => {
+            const imageType = metadata[0]["00080008"]["Value"];
+            if (imageType[2] === "VOLUME") {
+              return(metadata[0]);
+            }
+          });
+          promises.push(promise);
+        }
+        return(Promise.all(promises));
+      }).then(metadata => {
+        const viewer = new DICOMMicroscopyViewer.api.DICOMMicroscopyViewer({
+          client: dicomWebClient,
+          metadata
+        });
+        viewer.render({container});
+      });
+
+
     }
-
-
 };
 
 
