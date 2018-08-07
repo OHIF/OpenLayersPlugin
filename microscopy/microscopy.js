@@ -1,65 +1,25 @@
 // An OpenLayers based Microscopy OHIFPlugin
-
-
-try {
-    MicroscopyPlugin
-} catch (error) {
-    let MicroscopyPlugin;
-}
-
-
-MicroscopyPlugin = class MicroscopyPlugin extends OHIFPlugin {
-
+class MicroscopyPlugin extends ViewportPlugin {
     constructor(options = {}) {
         super();
+
         this.name = "MicroscopyPlugin";
         this.description = "Microscopy OHIF Plugin";
+
+        this.setupListeners();
     }
 
     setup() {
       console.log('setup Microscopy');
-
-      this.viewport = Session.get('activeViewport');
-      this.renderViewport();
     }
 
-    getDisplaySet(viewportIndex) {
-        const viewportData = OHIF.viewerbase.layoutManager.viewportData[viewportIndex];
-        const { studyInstanceUid, displaySetInstanceUid } = viewportData;
-        const studyMetadata = OHIF.viewer.StudyMetadataList.findBy({ studyInstanceUID: studyInstanceUid });
+    setupViewport(div, { viewportIndex = 0 }, displaySet) {
+        // Obtain the imaging data that has been provided to the viewport
+        if (!displaySet) {
+            displaySet = ViewportPlugin.getDisplaySet(viewportIndex);
+        }
 
-        return studyMetadata.findDisplaySet(displaySet => {
-            return displaySet.displaySetInstanceUid === displaySetInstanceUid;
-        });
-    }
-
-    renderViewport(viewportIndex = 0) {
-      let self = this;
-      // reset the div that will hold this plugin
-      // - remove old ones
-      // - add a new one with our id
-
-
-      // Obtain the imaging data that has been provided to the viewport
-      const displaySet = this.getDisplaySet(viewportIndex);
-
-      // Clear whatever is currently present in the viewport
-      const containers = document.querySelectorAll(".viewportContainer");
-      const parent = containers[viewportIndex];
-      parent.innerHTML = "";
-
-      // Create our own viewport rendering window
-      this.pluginDiv = document.createElement("div");
-      this.pluginDiv.style.width = '100%';
-      this.pluginDiv.style.height = '100%';
-      this.pluginDiv.id = "microscopyPlugin";
-      parent.appendChild(this.pluginDiv);
-
-      // Retrieve the Cornerstone imageIds from the display set
-      // TODO: In future, we want to get the metadata independently from Cornerstone
-     // const imageIds = displaySet.images.map(image => image.getImageId());
-
-      this.installOpenLayersRenderer(this.pluginDiv, displaySet);
+        this.installOpenLayersRenderer(div, displaySet);
     }
 
 
@@ -91,6 +51,7 @@ MicroscopyPlugin = class MicroscopyPlugin extends OHIFPlugin {
             seriesInstanceUID: displaySet.seriesInstanceUid,
             sopInstanceUID,
           };
+
           const promise = dicomWebClient.retrieveInstanceMetadata(retrieveInstanceOptions).then(metadata => {
             const imageType = metadata[0]["00080008"]["Value"];
             if (imageType[2] === "VOLUME") {
@@ -101,6 +62,9 @@ MicroscopyPlugin = class MicroscopyPlugin extends OHIFPlugin {
         }
         return(Promise.all(promises));
       }).then(metadata => {
+          console.warn(metadata);
+          metadata = metadata.filter(m => m);
+
         const viewer = new DICOMMicroscopyViewer.api.DICOMMicroscopyViewer({
           client: dicomWebClient,
           metadata
