@@ -1,12 +1,9 @@
 // An OpenLayers based Microscopy OHIFPlugin
-class MicroscopyPlugin extends ViewportPlugin {
+class MicroscopyPlugin extends OHIF.plugins.ViewportPlugin {
     constructor(options = {}) {
-        super();
+        super("MicroscopyPlugin");
 
-        this.name = "MicroscopyPlugin";
         this.description = "Microscopy OHIF Plugin";
-
-        this.setupListeners();
     }
 
     setup() {
@@ -26,8 +23,6 @@ class MicroscopyPlugin extends ViewportPlugin {
     // install the microscopy renderer into the web page.
     // you should only do this once.
     installOpenLayersRenderer(container, displaySet) {
-      console.log(container);
-
       const server = OHIF.servers.getCurrentServer();
       const accessToken = OHIF.user.getAccessToken(); // TODO: need to refresh
 
@@ -71,15 +66,13 @@ class MicroscopyPlugin extends ViewportPlugin {
         });
         viewer.render({container});
       });
-
-
     }
 };
 
 
-OHIFPlugin.entryPoints["MicroscopyPlugin"] = function () {
-    let microscopyPlugin = new MicroscopyPlugin();
+OHIF.plugins.entryPoints["MicroscopyPlugin"] = function () {
+    const microscopyPlugin = new MicroscopyPlugin();
     microscopyPlugin.setup();
 
-    OHIFPlugin.MicroscopyPlugin = microscopyPlugin;
+    OHIF.plugins.MicroscopyPlugin = microscopyPlugin;
 };
